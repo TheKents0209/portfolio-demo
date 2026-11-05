@@ -10,13 +10,24 @@ type Msg =
 
 const Row = memo(function Row({ position }: { position: Position }) {
   const price = useAppSelector((stock) => stock.pricesReducer[position.symbol]);
+  const [prev, setPrev] = useState(price);
+  const [dir, setDir] = useState<'up' | 'down' | null>(null);
+
+  if (price !== prev) {
+    setPrev(price);
+    if (prev !== undefined && price !== undefined) {
+      setDir(price > prev ? 'up' : 'down');
+    }
+  }
 
   return (
     <tr>
       <td>{position.name}</td>
       <td>{position.quantity}</td>
-      <td className="price">
-        <p>{price === undefined ? '...' : formatCents(price, position.currency)}</p>
+      <td>
+        <p key={price} className={dir ?? undefined}>
+          {price === undefined ? '...' : formatCents(price, position.currency)}
+        </p>
       </td>
       <td>
         {price === undefined ? '...' : formatCents(price * position.quantity, position.currency)}

@@ -43,5 +43,4 @@ Prices show `...` until the first snapshot arrives.
 
 ## Not done yet
 
-- No portfolio totals (per currency, since EUR and USD can't be added together).
-- No visual highlight when a price changes, and no screen-reader handling for live updates.
+- No portfolio totals (per currency, since EUR and USD can't be added together)

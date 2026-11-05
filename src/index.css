@@ -130,3 +130,20 @@ th:not(:first-child) {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+.up {
+  animation: flash-up 2s;
+}
+.down {
+  animation: flash-down 2s;
+}
+@keyframes flash-up {
+  from {
+    background: rgb(22 163 74 / 0.3);
+  }
+}
+@keyframes flash-down {
+  from {
+    background: rgb(220 38 38 / 0.3);
+  }
+}

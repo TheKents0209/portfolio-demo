@@ -1,28 +1,42 @@
-# Portfolio demo (private practice project)
+# Portfolio demo
 
-A live portfolio view, built to practise the Coop Pank interview question:
-"Imagine an investment app's portfolio view where prices and position values change all the time."
-Keep this repo private. Show it by screen share.
+A live portfolio table (in Estonian) that shows 10 holdings with prices streamed over a WebSocket.
 
+## Run it
+
+    npm install
     npm run server          fake price stream on ws://localhost:8080 (about 20 ticks a second)
     FLAKY=1 npm run server  same, but drops every connection every 20 s
-    npm run dev             the app
+    npm run dev             the app (Vite)
     npm test                Vitest
 
-The starting App.tsx is deliberately naive. Exercises, in order:
+## How it works
 
-1. **Measure first.** React DevTools Profiler: how many renders per second, and which rows?
-2. **Batch updates.** Buffer ticks and apply them once every 100 to 200 ms (or per animation frame).
-3. **Only changed rows re-render.** Move prices to a Redux Toolkit slice keyed by symbol.
-   Each row selects only its own price (`useSelector(s => s.prices[symbol])`) and is `React.memo`.
-4. **Money done right.** Values stay integer cents; format once with
-   `Intl.NumberFormat("et-EE", { style: "currency", currency })`. Test it in Vitest.
-5. **Derived values.** Position value and portfolio total come from selectors
-   (`createSelector`), never stored. Totals per currency: EUR and USD do not add up.
-6. **Stale data and reconnect.** Run with FLAKY=1. Show "hind seisuga 12:03" when the stream is
-   down, reconnect with backoff, and use the fresh snapshot on reconnect.
-7. **Readable changes.** Brief highlight on a change, not colour alone; `font-variant-numeric:
-   tabular-nums` so the table does not jump; screen readers are not told about every tick.
+- **Price server** (`server/price-server.ts`): holds prices for 10 symbols as integer cents.
+  A new client gets one `snapshot` message with every price. After that, every 50 ms a random
+  symbol moves by about 0.4% and every client gets a `tick` message (`{ symbol, priceCents, timestamp }`).
+- **Holdings** (`src/data/positions.ts`): a fixed list of symbol, name, quantity and currency
+  (EUR or USD). Only quantities are stored; values are computed from the live price.
+- **Store** (`src/redux/`): a Redux Toolkit slice holds a `symbol → priceCents` map.
+  `snapshotReceived` replaces the whole map, `ticksReceived` merges changed prices into it.
+- **App** (`src/App.tsx`): opens the WebSocket. A snapshot is dispatched at once. Ticks are
+  buffered and dispatched as one batch every 2 s. Each table row is `React.memo` and selects
+  only its own price, so a batch re-renders only the rows whose price changed.
+- **Formatting** (`src/lib/utils.ts`): money stays in integer cents until display, then goes
+  through a cached `Intl.NumberFormat('et-EE')` per currency, e.g. `3,12 €`, `228,41 $`.
+  Numeric columns use `tabular-nums` so the table does not jump.
 
-Optional, for the ad's nice-to-haves: a React Native view of the same store; a GraphQL
-subscription instead of the raw WebSocket.
+Columns: Väärtpaber (security), Kogus (quantity), Hind (price), Väärtus (value = price × quantity).
+Prices show `...` until the first snapshot arrives.
+
+## Tests
+
+- `src/lib/utils.test.ts`: currency formatting (decimal comma, grouping, small amounts).
+- `src/redux/slices/stockSlice.test.ts`: snapshot replaces, ticks merge, state is not mutated.
+- `src/float.test.ts`: why money is kept in cents.
+
+## Not done yet
+
+- No reconnect: if the stream drops (e.g. `FLAKY=1`), prices freeze with no warning.
+- No portfolio totals (per currency, since EUR and USD can't be added together).
+- No visual highlight when a price changes, and no screen-reader handling for live updates.

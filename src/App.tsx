@@ -36,13 +36,30 @@ const Row = memo(function Row({ position }: { position: Position }) {
   );
 });
 
+const Total = () => {
+  const total = useAppSelector((selector) => {
+    const prices = selector.pricesReducer;
+    const rate = prices.EURUSD;
+    if (rate === undefined) return undefined;
+    let eurCents = 0;
+    for (const position of positions) {
+      const price = prices[position.symbol];
+      if (price === undefined) return undefined;
+      const value = price * position.quantity;
+      eurCents += position.currency === 'EUR' ? value : Math.round((value * 100_000) / rate);
+    }
+    return eurCents;
+  });
+  return <p>Väärtus kokku: {total === undefined ? '...' : formatCents(total, 'EUR')}</p>;
+};
+
 const RetryInTimer = ({ retryAt }: { retryAt: number | null }) => {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(Date.now);
   useEffect(() => {
     if (retryAt === null) return;
 
     setNow(Date.now());
-    const interval = setInterval(() => setNow(Date.now()), 1000);
+    const interval = setInterval(() => setNow(Date.now), 1000);
 
     return () => {
       clearInterval(interval);
@@ -111,11 +128,12 @@ export default function App() {
     <main style={{ fontFamily: 'system-ui', padding: 24 }}>
       <h1>Portfell</h1>
       <RetryInTimer retryAt={retryAt} />
+      <Total />
 
       <table>
         <thead>
           <tr>
-            <th>Väärtpaber</th>
+            <th>Aktsia</th>
             <th>Kogus</th>
             <th>Hind</th>
             <th>Väärtus</th>

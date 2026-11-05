@@ -1,6 +1,3 @@
-// Fake price stream. Run: npm run server   (ws://localhost:8080)
-// Prices are integer cents, never floats.
-// FLAKY=1 npm run server  drops every connection every 20 s, to practise reconnecting.
 import { WebSocketServer, type WebSocket } from 'ws';
 
 const prices: Record<string, number> = {
@@ -14,6 +11,7 @@ const prices: Record<string, number> = {
   NOVO: 6930,
   ASML: 68120,
   NOKIA: 452,
+  EURUSD: 108345,
 };
 
 const wss = new WebSocketServer({ port: 8080 });
